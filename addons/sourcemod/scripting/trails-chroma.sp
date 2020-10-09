@@ -143,9 +143,20 @@ public void OnClientCookiesCached(int client)
 		return;
 	}
 	
-	char[] sChoiceCookie = new char[8];
-	GetClientCookie(client, gH_TrailChoiceCookie, sChoiceCookie, 8);
+	char sHidingCookie[8];
+	GetClientCookie(client, gH_TrailHidingCookie, sHidingCookie, 8);
+	gB_HidingTrails[client] = StringToInt(sHidingCookie) == 1;
 	
+	if(IsValidClient(client) && !gB_HidingTrails[client] && aL_Clients.FindValue(client) == -1) // Only works after reloading the plugin
+	{
+		aL_Clients.Push(client);
+	}
+}
+
+public void OnClientPostAdminCheck(int client)
+{
+	char sChoiceCookie[8];
+	GetClientCookie(client, gH_TrailChoiceCookie, sChoiceCookie, 8);
 	bool bNoAccess = gB_AdminsOnly && !CheckCommandAccess(client, "sm_trails_override", ADMFLAG_RESERVATION);
 	
 	if(sChoiceCookie[0] == '\0' || bNoAccess) // If the cookie is empty or the player doesn't have access
@@ -156,15 +167,6 @@ public void OnClientCookiesCached(int client)
 	else
 	{
 		gI_SelectedTrail[client] = StringToInt(sChoiceCookie);
-	}
-	
-	char[] sHidingCookie = new char[8];
-	GetClientCookie(client, gH_TrailHidingCookie, sHidingCookie, 8);
-	gB_HidingTrails[client] = StringToInt(sHidingCookie) == 1;
-	
-	if(IsValidClient(client) && !gB_HidingTrails[client] && aL_Clients.FindValue(client) == -1) // Only works after reloading the plugin
-	{
-		aL_Clients.Push(client);
 	}
 }
 
@@ -203,7 +205,7 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 
 bool LoadColorsConfig()
 {
-	char[] sPath = new char[PLATFORM_MAX_PATH];
+	char sPath[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, sPath, PLATFORM_MAX_PATH, "configs/trails-colors.cfg");
 	KeyValues kv = new KeyValues("trails-colors");
 	
@@ -252,29 +254,15 @@ public Action Command_Hide(int client, int args)
 			aL_Clients.Erase(index);
 		}
 		
-		if(gEV_Type == Engine_CSGO) // CS:GO supports HTML
-		{
-			PrintCenterText(client, "Other players' trails are now <font color='#FF00FF' face=''>Hidden</font>.");
-		}
-		else
-		{
-			PrintCenterText(client, "Other players' trails are now Hidden.");
-		}
+		PrintCenterText(client, "Other players' trails are now Hidden.");
 		
 		SetClientCookie(client, gH_TrailHidingCookie, "0");
 	}
 	else
 	{
 		aL_Clients.Push(client);
-		
-		if(gEV_Type == Engine_CSGO)
-		{
-			PrintCenterText(client, "Other players' trails are now <font color='#FFFF00' face=''>Visible</font>.");
-		}
-		else
-		{
-			PrintCenterText(client, "Other players' trails are now Visible.");
-		}
+
+		PrintCenterText(client, "Other players' trails are now Visible.");
 		
 		SetClientCookie(client, gH_TrailHidingCookie, "1");
 	}
@@ -303,14 +291,14 @@ Action OpenTrailMenu(int client, int page)
 	Menu menu = new Menu(Menu_Handler);
 	menu.SetTitle("Choose a trail:\n ");
 	
-	char[] sNone = new char[8];
+	char sNone[8];
 	IntToString(TRAIL_NONE, sNone, 8);
 	
 	menu.AddItem(sNone, "None", (gI_SelectedTrail[client] == TRAIL_NONE)? ITEMDRAW_DISABLED:ITEMDRAW_DEFAULT);
 	
 	for(int i = 0; i < gI_TrailAmount; i++)
 	{
-		char[] sInfo = new char[8];
+		char sInfo[8];
 		IntToString(i, sInfo, 8);
 		
 		if(StrEqual(gS_TrailTitle[i], "/empty/") || StrEqual(gS_TrailTitle[i], "/EMPTY/") || StrEqual(gS_TrailTitle[i], "{empty}") || StrEqual(gS_TrailTitle[i], "{EMPTY}"))
@@ -333,7 +321,7 @@ public int Menu_Handler(Menu menu, MenuAction action, int param1, int param2)
 {
 	if(action == MenuAction_Select)
 	{
-		char[] sInfo = new char[8];
+		char sInfo[8];
 		menu.GetItem(param2, sInfo, 8);
 		
 		MenuSelection(param1, sInfo);
@@ -353,48 +341,18 @@ void MenuSelection(int client, char[] info)
 	
 	if(choice == TRAIL_NONE)
 	{
-		if(gEV_Type == Engine_CSGO) // CS:GO supports HTML
-		{
-			PrintCenterText(client, "Your trail is now <font color='#FF0000' face=''>DISABLED</font>.");
-		}
-		else
-		{
-			PrintCenterText(client, "Your trail is now DISABLED.");
-		}
-		
+		PrintCenterText(client, "Your trail is now DISABLED.");
 		StopSpectrumCycle(client);
 	}
 	else
 	{
-		int color[3];
-		color[0] = gI_TrailSettings[choice].iRedChannel;
-		color[1] = gI_TrailSettings[choice].iGreenChannel;
-		color[2] = gI_TrailSettings[choice].iBlueChannel;
-		
-		char[] sHexColor = new char[16];
-		FormatEx(sHexColor, 16, "#%02x%02x%02x", color[0], color[1], color[2]);
-		
 		if(gI_SelectedTrail[client] == TRAIL_NONE)
 		{
-			if(gEV_Type == Engine_CSGO)
-			{
-				PrintCenterText(client, "Your trail is now <font color='#00FF00' face=''>ENABLED</font>.\nYour beam color is: <font color='%s' face=''>%s</font>.", sHexColor, gS_TrailTitle[choice]);
-			}
-			else
-			{
-				PrintCenterText(client, "Your trail is now ENABLED.\nYour beam color is: %s.", gS_TrailTitle[choice]);
-			}
+			PrintCenterText(client, "Your trail is now ENABLED.\nYour beam color is: %s.", gS_TrailTitle[choice]);
 		}
 		else
 		{
-			if(gEV_Type == Engine_CSGO)
-			{
-				PrintCenterText(client, "Your beam color is now: <font color='%s' face=''>%s</font>.", sHexColor, gS_TrailTitle[choice]);
-			}
-			else
-			{
 				PrintCenterText(client, "Your beam color is now: %s.", gS_TrailTitle[choice]);
-			}
 		}
 		
 		if(gI_TrailSettings[choice].iSpecialColor == 1 || gI_TrailSettings[choice].iSpecialColor == 2)
@@ -722,7 +680,9 @@ public void OnMapEnd()
 	aL_Clients.Clear();
 }
 
-bool IsValidClient(int client)
+stock bool IsValidClient(int client)
 {
-	return 1 <= client <= MaxClients && IsClientConnected(client) && IsClientInGame(client) && !IsFakeClient(client);
+	if (client >= 1 && client <= MaxClients && !IsFakeClient(client) && IsClientConnected(client) && IsClientInGame(client))
+		return true;
+	return false;
 }
