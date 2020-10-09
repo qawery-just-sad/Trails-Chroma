@@ -120,7 +120,7 @@ public void OnPluginStart()
 	{
 		if(AreClientCookiesCached(i))
 		{
-			OnClientCookiesCached(i);
+			OnClientPostAdminCheck(i);
 		}
 	}
 }
@@ -136,25 +136,13 @@ public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] n
 	gB_RespawnDisable = gCV_RespawnDisable.BoolValue;
 }
 
-public void OnClientCookiesCached(int client)
+public void OnClientPostAdminCheck(int client)
 {
 	if(IsFakeClient(client))
 	{
 		return;
 	}
-	
-	char sHidingCookie[8];
-	GetClientCookie(client, gH_TrailHidingCookie, sHidingCookie, 8);
-	gB_HidingTrails[client] = StringToInt(sHidingCookie) == 1;
-	
-	if(IsValidClient(client) && !gB_HidingTrails[client] && aL_Clients.FindValue(client) == -1) // Only works after reloading the plugin
-	{
-		aL_Clients.Push(client);
-	}
-}
 
-public void OnClientPostAdminCheck(int client)
-{
 	char sChoiceCookie[8];
 	GetClientCookie(client, gH_TrailChoiceCookie, sChoiceCookie, 8);
 	bool bNoAccess = gB_AdminsOnly && !CheckCommandAccess(client, "sm_trails_override", ADMFLAG_RESERVATION);
@@ -167,6 +155,15 @@ public void OnClientPostAdminCheck(int client)
 	else
 	{
 		gI_SelectedTrail[client] = StringToInt(sChoiceCookie);
+	}
+
+	char sHidingCookie[8];
+	GetClientCookie(client, gH_TrailHidingCookie, sHidingCookie, 8);
+	gB_HidingTrails[client] = StringToInt(sHidingCookie) == 1;
+	
+	if(IsValidClient(client) && !gB_HidingTrails[client] && aL_Clients.FindValue(client) == -1) // Only works after reloading the plugin
+	{
+		aL_Clients.Push(client);
 	}
 }
 
