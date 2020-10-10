@@ -10,7 +10,7 @@
 #pragma semicolon 1
 
 #define TRAIL_NONE -1
-#define DEBUG
+//#define DEBUG
 
 enum struct TrailSettings
 {
