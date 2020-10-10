@@ -10,7 +10,7 @@
 #pragma semicolon 1
 
 #define TRAIL_NONE -1
-// #define DEBUG
+#define DEBUG
 
 enum struct TrailSettings
 {
@@ -58,6 +58,7 @@ TrailSettings gI_TrailSettings[128];
 
 // Spectrum cycle globals
 int gI_CycleColor[MAXPLAYERS + 1][4];
+bool gB_InCycle[MAXPLAYERS + 1];
 bool gB_RedToYellow[MAXPLAYERS + 1];
 bool gB_YellowToGreen[MAXPLAYERS + 1];
 bool gB_GreenToCyan[MAXPLAYERS + 1];
@@ -349,7 +350,7 @@ void MenuSelection(int client, char[] info)
 		}
 		else
 		{
-				PrintCenterText(client, "Your beam color is now: %s.", gS_TrailTitle[choice]);
+			PrintCenterText(client, "Your beam color is now: %s.", gS_TrailTitle[choice]);
 		}
 		
 		if(gI_TrailSettings[choice].iSpecialColor == 1 || gI_TrailSettings[choice].iSpecialColor == 2)
@@ -357,7 +358,6 @@ void MenuSelection(int client, char[] info)
 			gI_CycleColor[client][0] = 0;
 			gI_CycleColor[client][1] = 0;
 			gI_CycleColor[client][2] = 0;
-			gB_RedToYellow[client] = true;
 		}
 		else
 		{
@@ -377,6 +377,7 @@ void StopSpectrumCycle(int client)
 	gB_CyanToBlue[client] = false;
 	gB_BlueToMagenta[client] = false;
 	gB_MagentaToRed[client] = false;
+	gB_InCycle[client] = false;
 }
 
 public Action OnPlayerRunCmd(int client)
@@ -475,6 +476,10 @@ int[] GetClientTrailColors(int client, int[] color)
 	if(gI_TrailSettings[choice].iSpecialColor == 1) // Spectrum trail
 	{
 		stepsize = 1;
+		if (!gB_InCycle[client])
+		{
+			gB_RedToYellow[client] = true;
+		}
 		DrawSpectrumTrail(client, stepsize);
 		
 		color[0] = gI_CycleColor[client][0];
@@ -484,6 +489,10 @@ int[] GetClientTrailColors(int client, int[] color)
 	else if(gI_TrailSettings[choice].iSpecialColor == 2) // Wave trail
 	{
 		stepsize = 15;
+		if (!gB_InCycle[client])
+		{
+			gB_RedToYellow[client] = true;
+		}
 		DrawSpectrumTrail(client, stepsize);
 		
 		color[0] = gI_CycleColor[client][0];
@@ -562,6 +571,8 @@ void SendTempEntity(int client)
 
 void DrawSpectrumTrail(int client, int stepsize)
 {
+	gB_InCycle[client] = true;
+
 	if(gB_RedToYellow[client])
 	{
 		gB_MagentaToRed[client] = false;
